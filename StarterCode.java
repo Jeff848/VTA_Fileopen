@@ -210,11 +210,16 @@ public class StarterCode {
 				
 				if(cla.getClassLoader().getName().toString().contains("Application")) { //for testing purposes
 					SSACFG cfg = ir.getControlFlowGraph();
+					SSAInstruction[] instructions = ir.getInstructions();
 					for(int i = 0; i < cfg.getNumberOfNodes(); i++) {
 						BasicBlock node = cfg.getNode(i);
 						Iterator<ISSABasicBlock> preds = cfg.getPredNodes((ISSABasicBlock)node);
 						Iterator<ISSABasicBlock> succs = cfg.getSuccNodes((ISSABasicBlock)node);
-
+						System.out.println(node);
+						int inst = node.getFirstInstructionIndex();
+						if(inst >= 0) {
+							System.out.println(instructions[inst]);
+						}
 					}
 				}
 
