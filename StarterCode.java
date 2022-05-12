@@ -170,9 +170,8 @@ public class StarterCode {
 		
 		// Step2: Compute OPEN(n), CLOSE(n), 
 		// where n is a statement. OPEN(n) is the set of files that are opened at the statement n
-
-		Map<String, Set<String>> openSet = new HashMap<>();
-		Map<String, Set<String>> closeSet = new HashMap<>();
+		Map<String, String> openSet = new HashMap<>();
+		Map<String, String> closeSet = new HashMap<>();
 		Map<String, String> variableToFile = new HashMap<>();
 
 		for (CGNode cgnode : cg) {
@@ -190,6 +189,7 @@ public class StarterCode {
 			}
 		}
 
+		//Get all open/closed
 		Iterator<Map.Entry<String, String>> itr = variableToFile.entrySet().iterator();
          
         while(itr.hasNext())
@@ -198,34 +198,74 @@ public class StarterCode {
              System.out.println("Key = " + entry.getKey() +
                                  ", Value = " + entry.getValue());
         }
+		
+		System.out.println(openSet);
+		System.out.println(closeSet);
+		//Propagate open/close upwards to method calls
 
 		// Step3: Generate constraints for IN(n) and OUT(n)
 		//go through all statements again, do the union stuff
-		//https://wala.github.io/javadoc/com/ibm/wala/cast/ir/cfg/DelegatingCFG.html
+		//https://wala.github.io/javadoc/com/ibm/wala/ssa/SSACFG.html
+		Map<String, Set<String>> inSet = new HashMap<>();
+		Map<String, Set<String>> outSet = new HashMap<>();
 		for (CGNode cgnode : cg) {
 			IR ir = cgnode.getIR();
 			if (ir != null) {
 				IMethod met = ir.getMethod();
 				IClass cla = met.getDeclaringClass();
-				
+				String prefix = cla.getName().toString() + "." + met.getName().toString();
 				if(cla.getClassLoader().getName().toString().contains("Application")) { //for testing purposes
 					SSACFG cfg = ir.getControlFlowGraph();
 					SSAInstruction[] instructions = ir.getInstructions();
+					
+					
+
 					for(int i = 0; i < cfg.getNumberOfNodes(); i++) {
-						BasicBlock node = cfg.getNode(i);
+						SSACFG.BasicBlock node = cfg.getNode(i);
 						Iterator<ISSABasicBlock> preds = cfg.getPredNodes((ISSABasicBlock)node);
 						Iterator<ISSABasicBlock> succs = cfg.getSuccNodes((ISSABasicBlock)node);
-						System.out.println(node);
-						int inst = node.getFirstInstructionIndex();
-						if(inst >= 0) {
-							System.out.println(instructions[inst]);
+						System.out.println("node is: " + "block." +  prefix + "." + node.getNumber());
+						List<SSAInstruction> blockInstructions = node.getAllInstructions();
+
+						inSet.put("block." +  prefix + "." + node.getNumber(), new HashSet<>());
+						outSet.put("block." +  prefix + "." + node.getNumber(), new HashSet<>());
+
+						//IN(n) = Union of the OUT(p) for all p where p is pred nodes of n
+						//OUT(n) = Union of IN(n) with OPEN(n), without CLOSE(n)
+						//Store based off block, not instruction
+						Set<String> in = new HashSet<String>();
+						while(preds.hasNext()) {
+							ISSABasicBlock pred = preds.next();
+							System.out.println(pred.getNumber());
+							
+							if(outSet.get("block." +  prefix + "." + pred.getNumber()) != null) {
+								System.out.println(outSet.get("block." +  prefix + "." + pred.getNumber()));
+								in.addAll(outSet.get("block." +  prefix + "." + pred.getNumber()));
+							}
+							
+							// for(int j = pred.getFirstInstructionIndex(); j < pred.getLastInstructionIndex(); j++) {
+							// 	if(instructions[j] != null) {
+							// 		in.addAll(instructions[j].get)
+							// 	}
+							// }
 						}
+						Set<String> out = new HashSet<String>(in);
+						for (SSAInstruction inst: blockInstructions) { //go through all instructions in block, union Open(n), remove Close(n)
+							out.add(openSet.get("inst." + prefix + "." + inst.iIndex()));
+							out.remove(closeSet.get("inst." + prefix + "." + inst.iIndex()));
+						}
+						
+						inSet.get("block." +  prefix + "." + node.getNumber()).addAll(in);
+						outSet.get("block." +  prefix + "." + node.getNumber()).addAll(out);
 					}
 				}
 
 				//System.out.println(met.getReturnType());
 			}
 		}
+
+		System.out.println(inSet);
+		System.out.println(outSet);
 
 		// Step4: Print out all the files that haven't been closed in the last statement of the main function.
 		//Find last statement in main program

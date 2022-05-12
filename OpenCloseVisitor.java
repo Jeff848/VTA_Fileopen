@@ -44,14 +44,14 @@ import java.util.*;
 
 public class OpenCloseVisitor implements SSAInstruction.IVisitor {
 
-	Map<String, Set<String>> openSet;
-    Map<String, Set<String>> closeSet;
+	Map<String, String> openSet;
+    Map<String, String> closeSet;
 	String prefix;
 	CHACallGraph cg;
 	CGNode currNode;
 	Map<String, String> variableToFile;
 	Graph<String> typeGraph;
-	public OpenCloseVisitor(Map<String, Set<String>> openSet, Map<String, Set<String>> closeSet, Map<String, String> variableToFile, Graph<String> typeGraph, String prefix, CHACallGraph cg, CGNode currNode) {
+	public OpenCloseVisitor(Map<String, String> openSet, Map<String, String> closeSet, Map<String, String> variableToFile, Graph<String> typeGraph, String prefix, CHACallGraph cg, CGNode currNode) {
 		this.openSet = openSet;
         this.closeSet = closeSet;
 		this.variableToFile = variableToFile;
@@ -124,51 +124,62 @@ public class OpenCloseVisitor implements SSAInstruction.IVisitor {
 	@Override
 	public void visitInvoke(SSAInvokeInstruction ins) {
         
-		System.out.println("Invoke---");
-		
+		// System.out.println("Invoke---");
 		// System.out.println(ins.getDeclaredTarget());
 		// System.out.println(ins.getProgramCounter());
 		// System.out.println(ins.iIndex());
+
 		MethodReference met = ins.getDeclaredTarget();
 		TypeReference cla = met.getDeclaringClass();
+
 		// System.out.println(cla.getName().toString());
 		// System.out.println(met.getName().toString());
 		
 		if(cla.getClassLoader().getName().toString().contains("Application")) {
 			//Check for nio readAllLines, Desktop open
-			if(cla.getName().toString().contains("Ljava/awt/Desktop") && 
-				met.getName().toString().contains("open")) { //Desktop open-- need to see which file object
-				System.out.println("Opens Desktop open");
-			}
-			if(cla.getName().toString().contains("Ljava/nio/file/Files") && 
-				met.getName().toString().contains("readAllLines")) { //nio readAllLines-- need to see which file object
-				System.out.println("Opens nio.readAllLines");
-			}
+
+			//Desktop open-- it seems like you are never able to manually close (external process)
+			// if(cla.getName().toString().contains("Ljava/awt/Desktop") && 
+			// 	met.getName().toString().contains("open")) { //Desktop open-- need to see which file object
+			// 	System.out.println("Opens Desktop open");
+			// }
+
+			//Seems to open/close in the same statement
+			// if(cla.getName().toString().contains("Ljava/nio/file/Files") && 
+			// 	met.getName().toString().contains("readAllLines")) { //nio readAllLines-- need to see which file object
+			// 	System.out.println("Opens nio.readAllLines");
+			// }
+
+
 			//check for <init> FileInputStream, BufferedReader/Writer, FileReader/Writer, Scanner
 			//if <init> File or <init> FileInputStream, make it a "File" object named after file string it opens
-
 			if(met.getName().toString().contains("<init>")) {
 				
 				if(cla.getName().toString().contains("Ljava/io/FileInputStream")) { //FileInputStream new
 					if(met.getParameterType(0).getName().toString().contains("Ljava/lang/String")) {
 						variableToFile.put(prefix + "." + ins.getUse(0), prefix + "." + ins.getUse(1)); //Initialize as File object
 					} else {
-						//get the file object it refers to
+						//Get the file object it refers to
 						//Either the variable itself or the object it could be is a file object
 						Set<String> possibleObjs = typeGraph.getEdges(prefix + "." + ins.getUse(1));
 						Iterator<String> iter = possibleObjs.iterator();
 						while(iter.hasNext()) {
-
 							String temp = iter.next();
-							System.out.println(temp);
+							// System.out.println(temp);
 							if(variableToFile.get(temp) != null) {
 								//This file is open
-								System.out.println("FileInputStream open");
+								// System.out.println("FileInputStream open");
+								// System.out.println(variableToFile.get(temp));
+								// System.out.println(prefix + "." + ins.iIndex());
+								openSet.put("inst." + prefix + "." + ins.iIndex(), variableToFile.get(temp));
 							}
 						}
 						if(variableToFile.get(prefix + "." + ins.getUse(1)) != null) {
 							//This file is open
-							System.out.println("FileInputStream open");
+							// System.out.println("FileInputStream open");
+							// System.out.println(variableToFile.get(prefix + "." + ins.getUse(1)));
+							// System.out.println(prefix + "." + ins.iIndex());
+							openSet.put("inst." + prefix + "." + ins.iIndex(), variableToFile.get(prefix + "." + ins.getUse(1)));
 						}
 					}
 
@@ -180,13 +191,55 @@ public class OpenCloseVisitor implements SSAInstruction.IVisitor {
 					}
 				}
 				if(cla.getName().toString().contains("Ljava/io/BufferedReader")) { //BufferedReader new
-					
+					//Get the file object it refers to
+					//Either the variable itself or the object it could be is a file object
+					Set<String> possibleObjs = typeGraph.getEdges(prefix + "." + ins.getUse(1));
+					Iterator<String> iter = possibleObjs.iterator();
+					while(iter.hasNext()) {
+						String temp = iter.next();
+						if(variableToFile.get(temp) != null) {
+							//This file is open-- mark it so for this instruction
+							openSet.put("inst." + prefix + "." + ins.iIndex(), variableToFile.get(temp));
+						}
+					}
+					if(variableToFile.get(prefix + "." + ins.getUse(1)) != null) {
+						//This file is open
+						openSet.put("inst." + prefix + "." + ins.iIndex(), variableToFile.get(prefix + "." + ins.getUse(1)));
+					}
 				}
 				if(cla.getName().toString().contains("Ljava/io/FileReader")) { //FileReader new
-					
+					//Get the file object it refers to
+					//Either the variable itself or the object it could be is a file object
+					Set<String> possibleObjs = typeGraph.getEdges(prefix + "." + ins.getUse(1));
+					Iterator<String> iter = possibleObjs.iterator();
+					while(iter.hasNext()) {
+						String temp = iter.next();
+						if(variableToFile.get(temp) != null) {
+							//This file is open
+							openSet.put("inst." + prefix + "." + ins.iIndex(), variableToFile.get(temp));
+						}
+					}
+					if(variableToFile.get(prefix + "." + ins.getUse(1)) != null) {
+						//This file is open
+						openSet.put("inst." + prefix + "." + ins.iIndex(), variableToFile.get(prefix + "." + ins.getUse(1)));
+					}
 				}
 				if(cla.getName().toString().contains("Ljava/util/Scanner")) { //FileReader new
-					
+					//Get the file object it refers to
+					//Either the variable itself or the object it could be is a file object
+					Set<String> possibleObjs = typeGraph.getEdges(prefix + "." + ins.getUse(1));
+					Iterator<String> iter = possibleObjs.iterator();
+					while(iter.hasNext()) {
+						String temp = iter.next();
+						if(variableToFile.get(temp) != null) {
+							//This file is open
+							openSet.put("inst." + prefix + "." + ins.iIndex(), variableToFile.get(temp));
+						}
+					}
+					if(variableToFile.get(prefix + "." + ins.getUse(1)) != null) {
+						//This file is open
+						openSet.put("inst." + prefix + "." + ins.iIndex(), variableToFile.get(prefix + "." + ins.getUse(1)));
+					}
 				}
 			}
 			
