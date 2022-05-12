@@ -132,8 +132,8 @@ public class OpenCloseVisitor implements SSAInstruction.IVisitor {
 		MethodReference met = ins.getDeclaredTarget();
 		TypeReference cla = met.getDeclaringClass();
 
-		// System.out.println(cla.getName().toString());
-		// System.out.println(met.getName().toString());
+		System.out.println(cla.getName().toString());
+		System.out.println(met.getName().toString());
 		
 		if(cla.getClassLoader().getName().toString().contains("Application")) {
 			//Check for nio readAllLines, Desktop open
@@ -172,6 +172,7 @@ public class OpenCloseVisitor implements SSAInstruction.IVisitor {
 								// System.out.println(variableToFile.get(temp));
 								// System.out.println(prefix + "." + ins.iIndex());
 								openSet.put("inst." + prefix + "." + ins.iIndex(), variableToFile.get(temp));
+								variableToFile.put(prefix + "." + ins.getUse(0), variableToFile.get(temp));
 							}
 						}
 						if(variableToFile.get(prefix + "." + ins.getUse(1)) != null) {
@@ -180,6 +181,7 @@ public class OpenCloseVisitor implements SSAInstruction.IVisitor {
 							// System.out.println(variableToFile.get(prefix + "." + ins.getUse(1)));
 							// System.out.println(prefix + "." + ins.iIndex());
 							openSet.put("inst." + prefix + "." + ins.iIndex(), variableToFile.get(prefix + "." + ins.getUse(1)));
+							variableToFile.put(prefix + "." + ins.getUse(0), variableToFile.get(prefix + "." + ins.getUse(1)));
 						}
 					}
 
@@ -240,6 +242,31 @@ public class OpenCloseVisitor implements SSAInstruction.IVisitor {
 						//This file is open
 						openSet.put("inst." + prefix + "." + ins.iIndex(), variableToFile.get(prefix + "." + ins.getUse(1)));
 					}
+				}
+			}
+
+			if(met.getName().toString().contains("close")) { 
+				System.out.println("When the impostor sus");
+				System.out.println(prefix + "." + ins.getUse(0));
+				Set<String> possibleObjs = typeGraph.getEdges(prefix + "." + ins.getUse(0));
+				Iterator<String> iter = possibleObjs.iterator();
+				while(iter.hasNext()) {
+					String temp = iter.next();
+					// System.out.println(temp);
+					if(variableToFile.get(temp) != null) {
+						//This file is open
+						// System.out.println("FileInputStream open");
+						// System.out.println(variableToFile.get(temp));
+						// System.out.println(prefix + "." + ins.iIndex());
+						closeSet.put("inst." + prefix + "." + ins.iIndex(), variableToFile.get(temp));
+					}
+				}
+				if(variableToFile.get(prefix + "." + ins.getUse(0)) != null) {
+					//This file is open
+					// System.out.println("FileInputStream open");
+					// System.out.println(variableToFile.get(prefix + "." + ins.getUse(1)));
+					// System.out.println(prefix + "." + ins.iIndex());
+					closeSet.put("inst." + prefix + "." + ins.iIndex(), variableToFile.get(prefix + "." + ins.getUse(0)));
 				}
 			}
 			

@@ -202,6 +202,8 @@ public class StarterCode {
 		System.out.println(openSet);
 		System.out.println(closeSet);
 		//Propagate open/close upwards to method calls
+		
+
 
 		// Step3: Generate constraints for IN(n) and OUT(n)
 		//go through all statements again, do the union stuff
@@ -251,8 +253,12 @@ public class StarterCode {
 						}
 						Set<String> out = new HashSet<String>(in);
 						for (SSAInstruction inst: blockInstructions) { //go through all instructions in block, union Open(n), remove Close(n)
-							out.add(openSet.get("inst." + prefix + "." + inst.iIndex()));
-							out.remove(closeSet.get("inst." + prefix + "." + inst.iIndex()));
+							if(openSet.get("inst." + prefix + "." + inst.iIndex()) != null) {
+								out.add(openSet.get("inst." + prefix + "." + inst.iIndex()));
+							}
+							if(closeSet.get("inst." + prefix + "." + inst.iIndex()) != null) {
+								out.remove(closeSet.get("inst." + prefix + "." + inst.iIndex()));
+							}
 						}
 						
 						inSet.get("block." +  prefix + "." + node.getNumber()).addAll(in);

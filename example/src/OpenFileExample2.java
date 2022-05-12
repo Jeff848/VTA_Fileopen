@@ -19,7 +19,8 @@ class OpenFileExample2
             while((r=fis.read())!=-1)  
             {  
             System.out.print((char)r);      //prints the content of the file  
-            }  
+            }
+            fis.close();  
         }  
         catch(Exception e)  
         {  
