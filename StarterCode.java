@@ -42,6 +42,7 @@ import com.ibm.wala.util.config.AnalysisScopeReader;
 import com.ibm.wala.ssa.SSACFG;
 import com.ibm.wala.ssa.SSACFG.BasicBlock;
 import com.ibm.wala.ssa.ISSABasicBlock;
+import com.ibm.wala.ipa.callgraph.util.CallGraphSearchUtil;
 
 
 public class StarterCode {
@@ -275,7 +276,27 @@ public class StarterCode {
 
 		// Step4: Print out all the files that haven't been closed in the last statement of the main function.
 		//Find last statement in main program
+		CGNode mainMethod = CallGraphSearchUtil.findMainMethod(cg);
+		IR mainIr = mainMethod.getIR();
+		SSAInstruction[] instArray = mainIr.getInstructions();
+		if (mainIr != null) {
+			IMethod met = mainIr.getMethod();
+			IClass cla = met.getDeclaringClass();
+			String prefix = cla.getName().toString() + "." + met.getName().toString();
+			SSACFG.BasicBlock exitBlock = mainIr.getExitBlock();
+			System.out.println(outSet.get("block." +  prefix + "." + exitBlock.getNumber()));
+			Iterator<SSAInstruction> insts = mainIr.iterateAllInstructions();
+			while(insts.hasNext()) {
+				SSAInstruction inst = insts.next();
+				System.out.println(inst);
+			} 
+			for(int i = 0; i < instArray.length; i++) {
+				System.out.println(instArray[i]);
+				System.out.println(i);
+			}
+		}
 
+		ResourceClose.closeResource(mainMethod, instArray[8]);
 		//see what is open at end
 	}
 }
