@@ -36,11 +36,14 @@ import com.ibm.wala.classLoader.ShrikeClass;
 import com.ibm.wala.shrikeCT.ClassReader;
 import com.ibm.wala.shrikeBT.shrikeCT.ClassInstrumenter;
 import com.ibm.wala.shrikeBT.MethodData;
-import com.ibm.wala.shrike.shrikeBT.Util;
-import com.ibm.wala.shrike.shrikeBT.IInstruction;
-import com.ibm.wala.shrike.shrikeBT.Instruction;
+import com.ibm.wala.shrikeBT.Util;
+import com.ibm.wala.shrikeBT.IInstruction;
+import com.ibm.wala.shrikeBT.Instruction;
+import com.ibm.wala.shrikeBT.MethodEditor;
 
 public class ResourceClose {
+	//Function for writing a close for a given resource in context of CGNode, initialized (assuming given new statement)
+	//in the given instruction (so we know what type the resource is)
 	public static void closeResource(CGNode cg, SSAInstruction ins) {
 		IR ir = cg.getIR();
 		IMethod met = ir.getMethod();
@@ -52,20 +55,28 @@ public class ResourceClose {
 
 
 		System.out.println(met.getName());
+		System.out.println(cla.getName().toString());
+
+		String className = cla.getName().toString();
 		for (int m = 0; m < ci.getReader().getMethodCount(); m++) {
 			try {
 				MethodData d = ci.visitMethod(m);
-				if(d != null && d.getName() == met.getName()) {
+				System.out.println(d.getName().toString());
+				System.out.println(met.getName().toString());
+				System.out.println(met.getName().toString().equals(d.getName().toString()));
+				if(d != null && met.getName().toString().equals(d.getName().toString())) {
 					MethodEditor me = new MethodEditor(d);
+					Class<?> cls = Class.forName(className);
 					me.beginPass();
 					me.insertAfterBody(
 						new MethodEditor.Patch() {
 							@Override
 							public void emitTo(MethodEditor.Output w) {
-							 w.emit(Util.makeInvoke(PrintStream.class, "close", new Class[] {}));
+							 w.emit(Util.makeInvoke(cls, "close", new Class[0]));
 							}
 						});
 					me.applyPatches();
+
 				}
 			} catch (Exception e)  
 			{  

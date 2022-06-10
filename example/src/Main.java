@@ -1,13 +1,31 @@
+import java.awt.Desktop;  
+import java.io.*; 
+import java.util.Scanner; 
+import java.nio.charset.StandardCharsets;   
+import java.nio.file.*;
+import java.util.*;   
+
 class Main
 {
     public static void main(String[] args) {
-        System.out.println("Hello world");
-        OpenFileExample1.test1(args);
-        OpenFileExample2.test2(args);
-        OpenFileExample3.test3(args);
-        OpenFileExample4.test4(args);
-        OpenFileExample5.test5(args);
-        OpenFileExample6.test6(args);
+
+        try  
+        {  
+            File file=new File("demo.txt");   
+            FileInputStream fis=new FileInputStream(file);     //opens a connection to an actual file 
+
+            System.out.println("Hello world1");
+            System.out.println("Hello world2");
+            OpenFileExample1.test1(args);
+            OpenFileExample2.test2(args);
+            OpenFileExample3.test3(args);
+            OpenFileExample4.test4(args);
+            OpenFileExample5.test5(args);
+            OpenFileExample6.test6(args);
+        }
+        catch(Exception e)  
+        {  
+        }
     }
 }
 
