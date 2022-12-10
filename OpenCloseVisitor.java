@@ -246,7 +246,6 @@ public class OpenCloseVisitor implements SSAInstruction.IVisitor {
 			}
 
 			if(met.getName().toString().contains("close")) { 
-				System.out.println("When the impostor sus");
 				System.out.println(prefix + "." + ins.getUse(0));
 				Set<String> possibleObjs = typeGraph.getEdges(prefix + "." + ins.getUse(0));
 				Iterator<String> iter = possibleObjs.iterator();

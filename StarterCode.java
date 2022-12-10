@@ -43,6 +43,7 @@ import com.ibm.wala.ssa.SSACFG;
 import com.ibm.wala.ssa.SSACFG.BasicBlock;
 import com.ibm.wala.ssa.ISSABasicBlock;
 import com.ibm.wala.ipa.callgraph.util.CallGraphSearchUtil;
+import com.ibm.wala.ssa.SSANewInstruction;
 
 
 public class StarterCode {
@@ -296,7 +297,7 @@ public class StarterCode {
 			}
 		}
 
-		ResourceClose.closeResource(mainMethod, instArray[8]);
+		ResourceClose.closeResource(mainMethod, (SSANewInstruction) instArray[5]);
 		//see what is open at end
 	}
 }

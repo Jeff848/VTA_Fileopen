@@ -170,6 +170,9 @@ public class MyVisitor implements SSAInstruction.IVisitor {
 				}
 			}
 		}
+
+
+		//If it's a file or object, note it as such 
 		System.out.println(ins);
 	}
 

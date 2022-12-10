@@ -41,10 +41,24 @@ import com.ibm.wala.shrikeBT.IInstruction;
 import com.ibm.wala.shrikeBT.Instruction;
 import com.ibm.wala.shrikeBT.MethodEditor;
 
+import java.awt.Desktop;  
+import java.io.*; 
+import java.util.Scanner; 
+import java.nio.charset.StandardCharsets;   
+import java.nio.file.*;
+import java.util.*;      
+
 public class ResourceClose {
 	//Function for writing a close for a given resource in context of CGNode, initialized (assuming given new statement)
 	//in the given instruction (so we know what type the resource is)
-	public static void closeResource(CGNode cg, SSAInstruction ins) {
+
+	private static OfflineInstrumenter instrumenter;
+
+
+
+	public static void closeResource(CGNode cg, SSANewInstruction ins) { //Maybe invoke instruction?
+		instrumenter = new OfflineInstrumenter();
+
 		IR ir = cg.getIR();
 		IMethod met = ir.getMethod();
 		IClass cla = met.getDeclaringClass();
@@ -52,12 +66,13 @@ public class ResourceClose {
 		ShrikeClass shrikeKlass = (ShrikeClass) cla;
 		ClassReader reader = shrikeKlass.getReader();
 		ClassInstrumenter ci = new ClassInstrumenter("", reader, null);
-
+		System.out.println("In closeResource()");
 
 		System.out.println(met.getName());
 		System.out.println(cla.getName().toString());
+		System.out.println(ins);
+		TypeReference fileClass = ins.getConcreteType();
 
-		String className = cla.getName().toString();
 		for (int m = 0; m < ci.getReader().getMethodCount(); m++) {
 			try {
 				MethodData d = ci.visitMethod(m);
@@ -66,13 +81,13 @@ public class ResourceClose {
 				System.out.println(met.getName().toString().equals(d.getName().toString()));
 				if(d != null && met.getName().toString().equals(d.getName().toString())) {
 					MethodEditor me = new MethodEditor(d);
-					Class<?> cls = Class.forName(className);
+					// Class<?> cls = Class.forName("java.io.fileinputstream");
 					me.beginPass();
 					me.insertAfterBody(
 						new MethodEditor.Patch() {
 							@Override
 							public void emitTo(MethodEditor.Output w) {
-							 w.emit(Util.makeInvoke(cls, "close", new Class[0]));
+							 w.emit(Util.makeInvoke(FileInputStream.class, "close", new Class[0]));
 							}
 						});
 					me.applyPatches();
@@ -82,6 +97,11 @@ public class ResourceClose {
 			{  
 				e.printStackTrace();  
 			} 
+		}
+
+		if (ci.isChanged()) {;;;;
+			ClassWriter cw = ci.emitClass();
+			instrumenter.outputModifiedClass(ci, cw);
 		}
 		// System.out.println(shrikeKlass);
 		// System.out.println(reader);
