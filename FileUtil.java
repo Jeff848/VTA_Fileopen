@@ -54,7 +54,7 @@ public class FileUtil {
         
     }
 
-    public static (Graph<String> g, Map<String, Set<String>> nodeToValue) {
+    public static boolean asdf(Graph<String> g, Map<String, Set<String>> nodeToValue) {
         Set<String> nodes = g.getNodes();
         for(String node : nodes) {
             Set<String> neighbors = g.getEdges(node);

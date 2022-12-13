@@ -280,6 +280,7 @@ public class StarterCode {
 		CGNode mainMethod = CallGraphSearchUtil.findMainMethod(cg);
 		IR mainIr = mainMethod.getIR();
 		SSAInstruction[] instArray = mainIr.getInstructions();
+		ResourceClose rc = new ResourceClose(classpath, "testtest.jar");
 		if (mainIr != null) {
 			IMethod met = mainIr.getMethod();
 			IClass cla = met.getDeclaringClass();
@@ -297,7 +298,8 @@ public class StarterCode {
 			}
 		}
 
-		ResourceClose.closeResource(mainMethod, (SSANewInstruction) instArray[5]);
+		rc.closeResource(mainMethod, (SSANewInstruction) instArray[5]);
+		rc.closeInstrumenter();
 		//see what is open at end
 	}
 }
